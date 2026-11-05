@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Автоотчёт по рекламе</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0a1a2f;
+      --gold: linear-gradient(0.75turn, rgba(255,148,21,1) 0%, rgba(255,199,9,1) 100%);
+      --gold-text: #ffc709;
+      --radius: 30px;
+      --red: #e5484d;
+      --green: #2e9d6a;
+      --line: #d5dbe5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px 48px;
+      background: var(--navy);
+      color: #fff;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 28px; line-height: 1.25; text-align: center; margin: 8px 0; text-wrap: balance; }
+    .sub { text-align: center; opacity: 0.8; margin: 0 0 24px; text-wrap: balance; }
+    .card { background: #fff; color: var(--navy); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 20px; margin: 0 0 14px; }
+    .btn {
+      display: inline-block; padding: 14px 24px; border: 2px solid transparent; border-radius: 999px;
+      background: var(--gold); color: var(--navy);
+      font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; text-decoration: none;
+    }
+    .btn.ghost { background: transparent; border-color: var(--navy); }
+    .on-dark .btn.ghost { color: #fff; border-color: #fff; }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .hint { font-size: 14px; opacity: 0.75; margin: 12px 0 0; }
+    .lbl { display: block; font-weight: 600; margin: 18px 0 6px; }
+    input[type="text"] {
+      width: 100%; padding: 14px; font-size: 16px; font-family: inherit;
+      color: var(--navy); background: #fff; border: 2px solid var(--line); border-radius: 14px;
+    }
+    input[type="text"]:focus { outline: none; border-color: #ff9415; }
+    .err { color: var(--red); font-weight: 600; margin: 12px 0 0; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .kpi { background: var(--navy); color: #fff; border-radius: 20px; padding: 16px; }
+    .kpi .l { font-size: 13px; opacity: 0.8; }
+    .kpi .v { font-size: 24px; font-weight: 700; color: var(--gold-text); margin-top: 4px; }
+    .tablewrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; white-space: normal; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.7; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
+    .tag.bad { background: var(--red); }
+    .tag.good { background: var(--green); }
+    .tag.mid { background: #8a94a6; }
+    .bar { height: 6px; border-radius: 3px; background: #e6eaf1; margin-top: 6px; min-width: 70px; }
+    .bar i { display: block; height: 100%; border-radius: 3px; background: var(--gold); }
+    .insights { margin: 0; padding-left: 20px; line-height: 1.6; }
+    .insights li { margin-bottom: 8px; }
+    .note { font-size: 13px; opacity: 0.7; margin: 16px 0 0; }
+    #report { display: none; }
+    #report.show { display: block; }
+    @media print {
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { background: #fff; color: var(--navy); }
+      .noprint { display: none !important; }
+      h1, .sub { color: var(--navy); }
+      .card { border: 1px solid var(--line); }
+      .note { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="noprint">Автоотчёт по рекламе</h1>
+    <p class="sub noprint">Загрузите выгрузку из Яндекс Директа, и отчёт соберётся за секунду. Данные остаются в вашем браузере и никуда не отправляются.</p>
+
+    <div class="card noprint">
+      <h2>1. Загрузите выгрузку</h2>
+      <div class="row">
+        <label class="btn" for="file">Выбрать файл (CSV)</label>
+        <input type="file" id="file" accept=".csv,.tsv,.txt" hidden>
+        <button type="button" class="btn ghost" id="demo">Показать на примере</button>
+      </div>
+      <p class="hint" id="fname"></p>
+
+      <label class="lbl" for="project">Название проекта (необязательно)</label>
+      <input type="text" id="project" placeholder="Например, Студия красоты">
+
+      <p class="hint">Нужны колонки: Кампания, Расход, Клики, Конверсии (или Заявки). По желанию: Неделя или Дата, Показы. Подходят выгрузки из Мастера отчётов Директа в формате CSV или TSV.</p>
+      <p class="err" id="error"></p>
+    </div>
+
+    <div id="report">
+      <div class="card">
+        <h2 id="r-title">Отчёт по рекламе</h2>
+        <p class="hint" id="r-period" style="margin: 0 0 14px"></p>
+        <div class="kpis" id="kpis"></div>
+      </div>
+
+      <div class="card">
+        <h2>Выводы</h2>
+        <ul class="insights" id="insights"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Кампании</h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Кампания</th><th>Расход</th><th>Клики</th><th>Заявки</th><th>Цена заявки</th><th>Оценка</th></tr>
+            </thead>
+            <tbody id="camp-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="weeks-card">
+        <h2>Динамика по неделям</h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Неделя</th><th>Расход</th><th>Клики</th><th>Заявки</th><th>Цена заявки</th></tr>
+            </thead>
+            <tbody id="weeks-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row noprint on-dark">
+        <button type="button" class="btn" id="copy">Скопировать текст</button>
+        <button type="button" class="btn ghost" id="print">Сохранить в PDF</button>
+      </div>
+      <p class="note">Оценки и выводы формируются автоматически: они подсказывают, куда смотреть в первую очередь. Перед решениями проверьте данные, настройки целей и неполные периоды (например, текущую неделю).</p>
+    </div>
+  </div>
+
+  <script>
+    // ---- PURE START
+    // Разбор файла и расчёты. Здесь нет ничего про страницу, только данные.
+
+    var ALIASES = {
+      campaign: ["кампани", "campaign"],
+      date: ["дата", "неделя", "week", "date"],
+      impressions: ["показы", "impressions"],
+      clicks: ["клики", "clicks"],
+      cost: ["расход", "cost", "затраты"],
+      conversions: ["конверсии", "conversions", "заявки", "лиды", "leads"]
+    };
+    var EXCLUDE = ["цена", "стоимость", "cpa", "cpc", "%", "ctr", "доля"];
+
+    function detectDelimiter(lines) {
+      var delims = [";", "\t", ","];
+      var sums = [0, 0, 0];
+      lines.forEach(function (line) {
+        var inQ = false;
+        for (var i = 0; i < line.length; i++) {
+          var ch = line.charAt(i);
+          if (ch === '"') { inQ = !inQ; }
+          else if (!inQ) {
+            var k = delims.indexOf(ch);
+            if (k !== -1) { sums[k]++; }
+          }
+        }
+      });
+      var best = 0;
+      for (var j = 1; j < 3; j++) { if (sums[j] > sums[best]) { best = j; } }
+      return delims[best];
+    }
+
+    function parseLine(line, delim) {
+      var out = [];
+      var cur = "";
+      var inQ = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line.charAt(i);
+        if (inQ) {
+          if (ch === '"') {
+            if (line.charAt(i + 1) === '"') { cur += '"'; i++; }
+            else { inQ = false; }
+          } else { cur += ch; }
+        } else if (ch === '"') { inQ = true; }
+        else if (ch === delim) { out.push(cur); cur = ""; }
+        else { cur += ch; }
+      }
+      out.push(cur);
+      return out.map(function (s) { return s.trim(); });
+    }
+
+    function parseCSV(text) {
+      text = String(text).replace(/^\uFEFF/, "");
+      var lines = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
+      var delim = detectDelimiter(lines.slice(0, 12));
+      return lines.map(function (l) { return parseLine(l, delim); });
+    }
+
+    function toNum(s) {
+      if (s === undefined || s === null) { return 0; }
+      s = String(s).replace(/[\s\u00a0₽%]/g, "").replace(/руб\.?/i, "").replace(",", ".");
+      var n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function parseDate(s) {
+      s = String(s || "").trim();
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) { return new Date(+m[1], +m[2] - 1, +m[3]); }
+      m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      if (m) { return new Date(+m[3], +m[2] - 1, +m[1]); }
+      return null;
+    }
+
+    function mondayOf(d) {
+      var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      var day = (x.getDay() + 6) % 7;
+      x.setDate(x.getDate() - day);
+      return x;
+    }
+
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    function fmtDay(d) { return pad(d.getDate()) + "." + pad(d.getMonth() + 1); }
+
+    function money(n) {
+      if (n < 100) {
+        return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
+      }
+      return Math.round(n).toLocaleString("ru-RU") + " ₽";
+    }
+    function num(n) { return (Math.round(n * 10) / 10).toLocaleString("ru-RU"); }
+    function pct(n) { return (Math.round(n * 10) / 10).toString().replace(".", ",") + "%"; }
+    function change(a, b) {
+      if (!b) { return "—"; }
+      var p = Math.round((a - b) / b * 100);
+      return (p > 0 ? "+" : p < 0 ? "−" : "") + Math.abs(p) + "%";
+    }
+
+    function mapColumns(row) {
+      var map = {};
+      row.forEach(function (cell, idx) {
+        var h = String(cell).toLowerCase();
+        var excluded = EXCLUDE.some(function (w) { return h.indexOf(w) !== -1; });
+        if (excluded) { return; }
+        Object.keys(ALIASES).forEach(function (field) {
+          if (map[field] !== undefined) { return; }
+          var hit = ALIASES[field].some(function (a) { return h.indexOf(a) !== -1; });
+          if (hit) { map[field] = idx; }
+        });
+      });
+      return map;
+    }
+
+    function analyze(rows) {
+      var headerIdx = -1;
+      var map = null;
+      var i;
+      for (i = 0; i < Math.min(rows.length, 20); i++) {
+        var m = mapColumns(rows[i]);
+        var distinct = {};
+        Object.keys(m).forEach(function (k) { distinct[m[k]] = 1; });
+        if (m.cost !== undefined && Object.keys(distinct).length >= 3) {
+          headerIdx = i;
+          map = m;
+          break;
+        }
+      }
+      if (!map) {
+        return { error: "В файле не найдена шапка таблицы. Нужны колонки: Кампания, Расход, Клики, Конверсии." };
+      }
+      if (map.conversions === undefined) {
+        return { error: "В файле нет колонки с конверсиями (например, «Конверсии» или «Заявки»). Добавьте её в выгрузку Мастера отчётов." };
+      }
+
+      var recs = [];
+      for (i = headerIdx + 1; i < rows.length; i++) {
+        var r = rows[i];
+        var name = map.campaign !== undefined ? String(r[map.campaign] || "").trim() : "Все данные";
+        var first = String(r[0] || "").trim().toLowerCase();
+        var isTotal = /^(итого|всего|total)/;
+        if (isTotal.test(first) || isTotal.test(name.toLowerCase())) { continue; }
+        var rec = {
+          name: name || "Без названия",
+          date: map.date !== undefined ? parseDate(r[map.date]) : null,
+          impressions: map.impressions !== undefined ? toNum(r[map.impressions]) : 0,
+          clicks: map.clicks !== undefined ? toNum(r[map.clicks]) : 0,
+          cost: toNum(r[map.cost]),
+          conversions: toNum(r[map.conversions])
+        };
+        if (!rec.cost && !rec.clicks && !rec.impressions) { continue; }
+        recs.push(rec);
+      }
+      if (!recs.length) { return { error: "В файле нет строк с данными." }; }
+
+      var total = { cost: 0, clicks: 0, impressions: 0, conversions: 0 };
+      var byCamp = Object.create(null);
+      var byWeek = Object.create(null);
+
+      recs.forEach(function (x) {
+        total.cost += x.cost;
+        total.clicks += x.clicks;
+        total.impressions += x.impressions;
+        total.conversions += x.conversions;
+
+        var c = byCamp[x.name];
+        if (!c) { c = byCamp[x.name] = { name: x.name, cost: 0, clicks: 0, impressions: 0, conversions: 0 }; }
+        c.cost += x.cost;
+        c.clicks += x.clicks;
+        c.impressions += x.impressions;
+        c.conversions += x.conversions;
+
+        if (x.date) {
+          var mon = mondayOf(x.date);
+          var key = mon.getTime();
+          var w = byWeek[key];
+          if (!w) { w = byWeek[key] = { key: key, start: mon, cost: 0, clicks: 0, conversions: 0 }; }
+          w.cost += x.cost;
+          w.clicks += x.clicks;
+          w.conversions += x.conversions;
+        }
+      });
+
+      total.cpa = total.conversions > 0 ? total.cost / total.conversions : null;
+      total.cpc = total.clicks > 0 ? total.cost / total.clicks : null;
+      total.ctr = total.impressions > 0 ? total.clicks / total.impressions * 100 : null;
+
+      var campaigns = Object.keys(byCamp).map(function (k) { return byCamp[k]; });
+      campaigns.forEach(function (c) {
+        c.cpa = c.conversions > 0 ? c.cost / c.conversions : null;
+        c.share = total.cost > 0 ? c.cost / total.cost * 100 : 0;
+        if (c.share < 3) { c.flag = "few"; }
+        else if (c.conversions === 0) { c.flag = "bad_none"; }
+        else if (total.cpa && c.cpa > total.cpa * 1.3) { c.flag = "bad_cpa"; }
+        else if (total.cpa && c.cpa < total.cpa * 0.7) { c.flag = "good"; }
+        else { c.flag = "mid"; }
+      });
+      campaigns.sort(function (a, b) { return b.cost - a.cost; });
+
+      var weeks = Object.keys(byWeek).map(function (k) { return byWeek[k]; });
+      weeks.sort(function (a, b) { return a.key - b.key; });
+      weeks.forEach(function (w) {
+        var end = new Date(w.start.getFullYear(), w.start.getMonth(), w.start.getDate() + 6);
+        w.end = end;
+        w.label = fmtDay(w.start) + "–" + fmtDay(end);
+        w.cpa = w.conversions > 0 ? w.cost / w.conversions : null;
+      });
+
+      var period = "";
+      if (weeks.length) {
+        var lastEnd = weeks[weeks.length - 1].end;
+        period = fmtDay(weeks[0].start) + " – " + fmtDay(lastEnd) + "." + lastEnd.getFullYear();
+      }
+
+      return { total: total, campaigns: campaigns, weeks: weeks, period: period };
+    }
+
+    function buildInsights(a) {
+      var out = [];
+      var t = a.total;
+
+      var s = "Потрачено " + money(t.cost) + ", получено " + num(t.conversions) + " заявок";
+      s += t.cpa ? ", средняя цена заявки " + money(t.cpa) + "." : ". Заявок нет, цену заявки посчитать нельзя.";
+      out.push(s);
+
+      var none = a.campaigns.filter(function (c) { return c.flag === "bad_none"; });
+      if (none.length) {
+        var wasted = none.reduce(function (sum, c) { return sum + c.cost; }, 0);
+        var names = none.slice(0, 3).map(function (c) { return "«" + c.name + "»"; }).join(", ");
+        if (none.length > 3) { names += " и др."; }
+        out.push("Кампании без заявок потратили " + money(wasted) + " (" + pct(wasted / t.cost * 100) + " бюджета): " + names + ". Проверьте объявления, ключи и посадочную страницу; если причину найти не удаётся, сократите бюджет или остановите кампанию.");
+      }
+
+      var dear = a.campaigns.filter(function (c) { return c.flag === "bad_cpa"; });
+      if (dear.length && t.cpa) {
+        var list = dear.map(function (c) { return "«" + c.name + "» — " + money(c.cpa); }).join("; ");
+        out.push("Дорогие заявки: " + list + " (в среднем по проекту " + money(t.cpa) + "). Стоит пересобрать ключи и минус-слова, проверить ставки и тексты объявлений.");
+      }
+
+      var good = a.campaigns.filter(function (c) { return c.flag === "good"; });
+      good.sort(function (x, y) { return x.cpa - y.cpa; });
+      if (good.length) {
+        out.push("Эффективнее всего работает «" + good[0].name + "»: заявка обходится в " + money(good[0].cpa) + ". Часть бюджета из слабых кампаний можно перенести сюда, если есть запас показов.");
+      }
+
+      if (a.weeks.length >= 2) {
+        var last = a.weeks[a.weeks.length - 1];
+        var prev = a.weeks[a.weeks.length - 2];
+        var line = "Последняя неделя (" + last.label + ") против предыдущей: расход " + change(last.cost, prev.cost) +
+          ", заявок " + num(last.conversions) + " против " + num(prev.conversions);
+        if (last.cpa && prev.cpa) {
+          line += ", цена заявки " + money(last.cpa) + " против " + money(prev.cpa);
+        }
+        out.push(line + ".");
+      }
+
+      return out;
+    }
+    // ---- PURE END
+
+    // ---- Страница: показ данных и кнопки
+    var SAMPLE = [
+      "Неделя;Кампания;Показы;Клики;Расход;Конверсии",
+      "05.10.2026;Поиск — перманентный макияж;9800;410;14200,00;13",
+      "05.10.2026;Поиск — брови;6100;230;9300,50;6",
+      "05.10.2026;РСЯ — холодная аудитория;41000;520;15800,00;0",
+      "05.10.2026;РСЯ — ретаргетинг;5200;190;4100,00;5",
+      "05.10.2026;Поиск — конкуренты;3100;140;8800,00;2",
+      "12.10.2026;Поиск — перманентный макияж;10400;430;14900,00;14",
+      "12.10.2026;Поиск — брови;5900;220;9100,00;6",
+      "12.10.2026;РСЯ — холодная аудитория;43500;560;16900,50;0",
+      "12.10.2026;РСЯ — ретаргетинг;5600;210;4400,00;6",
+      "12.10.2026;Поиск — конкуренты;3300;150;9400,00;2",
+      "19.10.2026;Поиск — перманентный макияж;10900;445;15300,00;15",
+      "19.10.2026;Поиск — брови;6300;240;9900,00;5",
+      "19.10.2026;РСЯ — холодная аудитория;45200;590;17600,00;0",
+      "19.10.2026;РСЯ — ретаргетинг;5900;225;4650,00;6",
+      "19.10.2026;Поиск — конкуренты;3000;135;8700,00;1",
+      "26.10.2026;Поиск — перманентный макияж;11200;460;15900,00;17",
+      "26.10.2026;Поиск — брови;6500;250;10200,00;7",
+      "26.10.2026;РСЯ — холодная аудитория;46800;610;18300,00;0",
+      "26.10.2026;РСЯ — ретаргетинг;6100;230;4800,00;7",
+      "26.10.2026;Поиск — конкуренты;3200;145;9300,00;2"
+    ].join("\n");
+
+    var state = { analysis: null };
+
+    function $(id) { return document.getElementById(id); }
+
+    function esc(s) {
+      var map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+      return String(s).replace(/[&<>"']/g, function (ch) { return map[ch]; });
+    }
+
+    var TAGS = {
+      bad_none: ["bad", "Нет заявок"],
+      bad_cpa: ["bad", "Дорого"],
+      good: ["good", "Эффективно"],
+      mid: ["mid", "В норме"],
+      few: ["mid", "Мало данных"]
+    };
+
+    function render() {
+      var a = state.analysis;
+      if (!a) { return; }
+      var t = a.total;
+      var project = $("project").value.trim();
+
+      $("r-title").textContent = project ? "Отчёт по рекламе: " + project : "Отчёт по рекламе";
+      $("r-period").textContent = a.period ? "Период: " + a.period : "";
+
+      var kpis = [
+        ["Расход", money(t.cost)],
+        ["Клики", num(t.clicks)],
+        ["Заявки", num(t.conversions)],
+        ["Цена заявки", t.cpa ? money(t.cpa) : "—"],
+        ["Цена клика", t.cpc ? money(t.cpc) : "—"],
+        ["CTR", t.ctr !== null ? pct(t.ctr) : "—"]
+      ];
+      $("kpis").innerHTML = kpis.map(function (k) {
+        return '<div class="kpi"><div class="l">' + k[0] + '</div><div class="v">' + k[1] + '</div></div>';
+      }).join("");
+
+      $("insights").innerHTML = buildInsights(a).map(function (s) {
+        return "<li>" + esc(s) + "</li>";
+      }).join("");
+
+      $("camp-body").innerHTML = a.campaigns.map(function (c) {
+        var tag = TAGS[c.flag];
+        return "<tr>" +
+          "<td>" + esc(c.name) + "</td>" +
+          "<td>" + money(c.cost) + '<div class="bar"><i style="width:' + Math.min(100, c.share) + '%"></i></div></td>' +
+          "<td>" + num(c.clicks) + "</td>" +
+          "<td>" + num(c.conversions) + "</td>" +
+          "<td>" + (c.cpa ? money(c.cpa) : "—") + "</td>" +
+          '<td><span class="tag ' + tag[0] + '">' + tag[1] + "</span></td>" +
+          "</tr>";
+      }).join("");
+
+      $("weeks-card").style.display = a.weeks.length ? "" : "none";
+      $("weeks-body").innerHTML = a.weeks.map(function (w) {
+        return "<tr>" +
+          "<td>" + w.label + "</td>" +
+          "<td>" + money(w.cost) + "</td>" +
+          "<td>" + num(w.clicks) + "</td>" +
+          "<td>" + num(w.conversions) + "</td>" +
+          "<td>" + (w.cpa ? money(w.cpa) : "—") + "</td>" +
+          "</tr>";
+      }).join("");
+
+      $("report").classList.add("show");
+    }
+
+    function loadText(text, label) {
+      $("error").textContent = "";
+      var a = analyze(parseCSV(text));
+      if (a.error) {
+        state.analysis = null;
+        $("report").classList.remove("show");
+        $("error").textContent = a.error;
+        return;
+      }
+      state.analysis = a;
+      $("fname").textContent = "Загружено: " + label;
+      render();
+    }
+
+    function readFile(f) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = reader.result;
+        if (text.indexOf("\uFFFD") !== -1) {
+          var r2 = new FileReader();
+          r2.onload = function () { loadText(r2.result, f.name); };
+          r2.readAsText(f, "windows-1251");
+        } else {
+          loadText(text, f.name);
+        }
+      };
+      reader.readAsText(f, "utf-8");
+    }
+
+    function reportText() {
+      var a = state.analysis;
+      var t = a.total;
+      var project = $("project").value.trim();
+      var lines = [];
+      lines.push("Отчёт по рекламе" + (project ? ": " + project : ""));
+      if (a.period) { lines.push("Период: " + a.period); }
+      lines.push("");
+      lines.push("Расход: " + money(t.cost) + " | Клики: " + num(t.clicks) + " | Заявки: " + num(t.conversions) + " | Цена заявки: " + (t.cpa ? money(t.cpa) : "—"));
+      lines.push("");
+      lines.push("Выводы:");
+      buildInsights(a).forEach(function (s, i) { lines.push((i + 1) + ". " + s); });
+      return lines.join("\n");
+    }
+
+    $("file").addEventListener("change", function (e) {
+      var f = e.target.files[0];
+      if (!f) { return; }
+      readFile(f);
+      e.target.value = "";
+    });
+
+    $("demo").addEventListener("click", function () { loadText(SAMPLE, "пример (тестовые данные)"); });
+    $("project").addEventListener("input", render);
+    $("print").addEventListener("click", function () { window.print(); });
+
+    $("copy").addEventListener("click", function () {
+      if (!state.analysis) { return; }
+      var text = reportText();
+      var btn = $("copy");
+      function done() {
+        btn.textContent = "Скопировано";
+        setTimeout(function () { btn.textContent = "Скопировать текст"; }, 2000);
+      }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); } catch (err) {}
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  </script>
+</body>
+</html>
