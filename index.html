@@ -136,6 +136,10 @@
       <p class="hint" id="p-fname"></p>
       <p class="hint">Нужны колонки: Площадка, Расход, Клики, Конверсии. Чтобы находить мусор точнее, добавьте «Показатель отказов» или «Длительность визита». «Глубина просмотра» показывается в таблице, но мусором не считается. Без этих колонок будут помечены только приложения и площадки без заявок.</p>
 
+      <label class="lbl" for="p-words">Слова в названиях площадок, которые считаем мусором (необязательно)</label>
+      <textarea id="p-words" rows="2">game, puzzle, match, mahjong, solitaire, tile, candy, merge, bubble, casino, slots, jewel, blast, saga</textarea>
+      <p class="hint">Через запятую. Ловит игры и похожие приложения по названию, например com.cube.puzzle. Слово ищется в любом месте названия, поэтому подбирайте список под клиента.</p>
+
       <h3>Защита от ложного «мусора»</h3>
       <p class="hint" style="margin-top: 0">Площадка могла давать заявки раньше, а в этом периоде просто не дать. Загрузите выгрузку площадок за больший период (например, 90 дней): площадки, которые там давали заявки, получат метку «Проверить», а не «Мусор».</p>
       <div class="row" style="margin-top: 10px">
@@ -234,9 +238,7 @@
         <h2>Площадки, на которые стоит посмотреть</h2>
         <div class="tablewrap">
           <table>
-            <thead>
-              <tr><th>Площадка</th><th>Расход</th><th>Клики</th><th>Заявки</th><th>Отказы</th><th>Время визита</th><th>Глубина</th><th>Оценка</th></tr>
-            </thead>
+            <thead id="p-head"></thead>
             <tbody id="p-body"></tbody>
           </table>
         </div>
@@ -271,6 +273,7 @@
       fewShare: 3,            // доля расхода (%), ниже которой данных «мало»
       minClicks: 3,           // запросы: с какого числа кликов считаем запрос без заявок
       placeMinClicks: 5,      // площадки: с какого числа кликов оцениваем площадку
+      appIsSignal: true,      // площадки: считать «мобильное приложение» признаком мусора (false: оценивать только по поведению)
       bounceJunk: 70,         // площадки: отказы (%) от этого значения считаем плохим сигналом
       durationJunk: 15,       // площадки: визит короче этого числа секунд считаем плохим сигналом
       minusCandidates: 15     // сколько кандидатов в минус-слова показывать
@@ -738,7 +741,7 @@
     function buildQueryInsights(a) {
       var s = a.summary;
       var out = [];
-      out.push("Проанализировано " + a.queries.length + " " + plural(a.queries.length, "запрос", "запроса", "запросов") + " на " + money(s.cost) + ", заявок по ним: " + num(s.conversions) + ".");
+      out.push("Проанализировано " + num(a.queries.length) + " " + plural(a.queries.length, "запрос", "запроса", "запросов") + " на " + money(s.cost) + ", заявок по ним: " + num(s.conversions) + ".");
 
       if (a.junk.length) {
         out.push("Мусорные запросы (со стоп-словами и без единой заявки): " + a.junk.length + " шт., " + money(s.junkStopCost) +
@@ -791,6 +794,8 @@
 
     function analyzePlaces(rows, opts) {
       var history = (opts && opts.history) || {};
+      var junkWords = (opts && opts.junkWords) || [];
+      var historyLoaded = Object.keys(history).length > 0;
       var h = findHeader(rows, P_ALIASES, P_EXCLUDE, ["place", "cost"], 3);
       if (!h) {
         return { error: "В файле не найдена шапка таблицы площадок. Нужны колонки: Площадка, Расход, Клики, Конверсии." };
@@ -829,7 +834,7 @@
       var places = order.map(function (k) { return by[k]; }).filter(function (p) { return p.cost || p.clicks || p.impressions; });
       if (!places.length) { return { error: "В файле площадок нет строк с данными." }; }
 
-      var summary = { cost: 0, clicks: 0, conversions: 0, junkCost: 0, junkClicks: 0, noleadCost: 0, checkCost: 0, junkShare: 0, appCount: 0 };
+      var summary = { cost: 0, clicks: 0, conversions: 0, junkCost: 0, junkClicks: 0, noleadCost: 0, checkCost: 0, fewCost: 0, junkShare: 0, appCount: 0 };
       var groups = { junk: [], check: [], nolead: [], good: [], few: [] };
 
       places.forEach(function (p) {
@@ -850,7 +855,9 @@
         } else {
           if (p.bounce !== null && p.bounce >= CONFIG.bounceJunk) { p.reasons.push("отказы " + Math.round(p.bounce) + "%"); }
           if (p.duration !== null && p.duration < CONFIG.durationJunk) { p.reasons.push("визит " + Math.round(p.duration) + " сек"); }
-          if (p.app) { p.reasons.push("мобильное приложение"); }
+          var nameHit = junkWords.filter(function (w) { return p.key.indexOf(w) !== -1; })[0];
+          if (nameHit) { p.reasons.push("слово в названии: " + nameHit); }
+          if (p.app && CONFIG.appIsSignal) { p.reasons.push("мобильное приложение"); }
           if (p.wasGood) {
             p.reasons.push("давала заявки раньше");
             p.flag = "check";
@@ -871,13 +878,14 @@
       });
       groups.nolead.forEach(function (p) { summary.noleadCost += p.cost; });
       groups.check.forEach(function (p) { summary.checkCost += p.cost; });
+      groups.few.forEach(function (p) { summary.fewCost += p.cost; });
       summary.junkShare = summary.cost > 0 ? summary.junkCost / summary.cost * 100 : 0;
 
       return {
         places: places, summary: summary, junk: groups.junk, check: groups.check, nolead: groups.nolead, good: groups.good, few: groups.few,
         problems: groups.junk.concat(groups.check, groups.nolead).sort(byCostDesc),
         excludeList: groups.junk.map(function (p) { return p.name; }),
-        hasBounce: hasBounce, hasDuration: hasDuration, hasDepth: hasDepth
+        hasBounce: hasBounce, hasDuration: hasDuration, hasDepth: hasDepth, historyLoaded: historyLoaded
       };
     }
 
@@ -901,12 +909,14 @@
     function buildPlaceInsights(a) {
       var s = a.summary;
       var out = [];
-      out.push("Проанализировано " + a.places.length + " " + plural(a.places.length, "площадка", "площадки", "площадок") + ": расход " + money(s.cost) + ", заявок " + num(s.conversions) + ".");
+      out.push("Проанализировано " + num(a.places.length) + " " + plural(a.places.length, "площадка", "площадки", "площадок") + ": расход " + money(s.cost) + ", заявок " + num(s.conversions) + ".");
 
       if (a.junk.length) {
         var line = "Мусорный трафик: " + a.junk.length + " " + plural(a.junk.length, "площадка", "площадки", "площадок") + ", " + money(s.junkCost) + " (" + pct(s.junkShare) + " расхода по площадкам), заявок ноль. Больше всего ушло на " + topPlaces(a.junk, 3) + ".";
         if (s.appCount) { line += " Из них мобильных приложений: " + s.appCount + "."; }
-        out.push(line + " Это данные за выбранный период: загрузите выгрузку за больший период, чтобы не исключить площадки, которые давали заявки раньше.");
+        out.push(a.historyLoaded
+          ? line + " Площадки, которые давали заявки раньше, сюда не входят."
+          : line + " Это данные за выбранный период: загрузите выгрузку за больший период, чтобы не исключить площадки, которые давали заявки раньше.");
       } else {
         out.push("Явного мусорного трафика по заданным признакам не найдено.");
       }
@@ -917,6 +927,11 @@
 
       if (a.nolead.length) {
         out.push("Ещё " + a.nolead.length + " " + plural(a.nolead.length, "площадка", "площадки", "площадок") + " с кликами, но без заявок, " + money(s.noleadCost) + ". Признаков мусора у них нет: сначала проверьте, как ведёт себя посадочная страница.");
+      }
+
+      if (a.few.length) {
+        out.push(num(a.few.length) + " " + plural(a.few.length, "площадка получила", "площадки получили", "площадок получили") + " меньше " + CONFIG.placeMinClicks + " кликов и не оценивались: " + money(a.summary.fewCost) +
+          " (" + pct(a.summary.cost > 0 ? a.summary.fewCost / a.summary.cost * 100 : 0) + " расхода). Доля мусора выше посчитана только по оценённым площадкам: в этой части мусор не проверялся.");
       }
 
       if (!a.hasBounce && !a.hasDuration) {
@@ -1177,10 +1192,17 @@
         ["Мусор, ₽", money(s.junkCost)],
         ["Доля мусора", pct(s.junkShare)],
         ["Проверить, ₽", money(s.checkCost)],
-        ["Без заявок, ₽", money(s.noleadCost)]
+        ["Без заявок, ₽", money(s.noleadCost)],
+        ["Не оценено, ₽", money(s.fewCost)]
       ]);
       $("p-insights").innerHTML = listHtml(buildPlaceInsights(a));
 
+      var showB = a.places.some(function (p) { return p.bounce !== null; });
+      var showD = a.places.some(function (p) { return p.duration !== null; });
+      var showG = a.places.some(function (p) { return p.depth !== null; });
+      $("p-head").innerHTML = "<tr><th>Площадка</th><th>Расход</th><th>Клики</th><th>Заявки</th>" +
+        (showB ? "<th>Отказы</th>" : "") + (showD ? "<th>Время визита</th>" : "") + (showG ? "<th>Глубина</th>" : "") +
+        "<th>Оценка</th></tr>";
       $("p-body").innerHTML = a.problems.slice(0, TABLE_LIMIT).map(function (p) {
         var tag = PTAGS[p.flag];
         return "<tr>" +
@@ -1188,9 +1210,9 @@
           "<td>" + money(p.cost) + "</td>" +
           "<td>" + num(p.clicks) + "</td>" +
           "<td>" + num(p.conversions) + "</td>" +
-          "<td>" + (p.bounce !== null ? Math.round(p.bounce) + "%" : "—") + "</td>" +
-          "<td>" + (p.duration !== null ? Math.round(p.duration) + " сек" : "—") + "</td>" +
-          "<td>" + (p.depth !== null ? (Math.round(p.depth * 10) / 10).toString().replace(".", ",") : "—") + "</td>" +
+          (showB ? "<td>" + (p.bounce !== null ? Math.round(p.bounce) + "%" : "—") + "</td>" : "") +
+          (showD ? "<td>" + (p.duration !== null ? Math.round(p.duration) + " сек" : "—") + "</td>" : "") +
+          (showG ? "<td>" + (p.depth !== null ? (Math.round(p.depth * 10) / 10).toString().replace(".", ",") : "—") + "</td>" : "") +
           '<td><span class="tag ' + tag[0] + '">' + tag[1] + "</span></td>" +
           "</tr>";
       }).join("");
@@ -1249,7 +1271,7 @@
       var history = Object.create(null);
       if (state.pHist) { Object.keys(state.pHist.map).forEach(function (k) { history[k] = 1; }); }
       parseNames($("p-keep").value).forEach(function (n) { history[n] = 1; });
-      var a = analyzePlaces(state.pRows, { history: history });
+      var a = analyzePlaces(state.pRows, { history: history, junkWords: parseNames($("p-words").value) });
       if (a.error) {
         state.places = null;
         $("p-report").classList.remove("show");
@@ -1375,6 +1397,7 @@
     $("p-demo").addEventListener("click", function () { loadPlaces(SAMPLE_P, "пример (тестовые данные)"); });
     $("ph-demo").addEventListener("click", function () { loadPlacesHistory(SAMPLE_P_HIST, "пример: данные за 90 дней"); });
     $("p-keep").addEventListener("input", runPlaces);
+    $("p-words").addEventListener("input", runPlaces);
 
     $("project").addEventListener("input", render);
     $("stop").addEventListener("input", runQueries);
