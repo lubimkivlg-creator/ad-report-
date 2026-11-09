@@ -790,8 +790,7 @@
       if (["com", "ru", "org", "net", "io", "me", "app"].indexOf(parts[0]) === -1) { return false; }
       if (TLDS.indexOf(parts[parts.length - 1]) !== -1) { return false; }
       return /^[a-z0-9_.\-]+$/.test(name.toLowerCase());
-    }
-
+    
     function analyzePlaces(rows, opts) {
       var history = (opts && opts.history) || {};
       var junkWords = (opts && opts.junkWords) || [];
