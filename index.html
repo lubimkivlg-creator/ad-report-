@@ -13,6 +13,7 @@
       --radius: 30px;
       --red: #e5484d;
       --green: #2e9d6a;
+      --amber: #d98a00;
       --line: #d5dbe5;
     }
     * { box-sizing: border-box; }
@@ -28,21 +29,24 @@
     .sub { text-align: center; opacity: 0.8; margin: 0 0 24px; text-wrap: balance; }
     .card { background: #fff; color: var(--navy); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
     .card h2 { font-size: 20px; margin: 0 0 14px; }
+    .card h3 { font-size: 16px; margin: 20px 0 8px; }
     .btn {
       display: inline-block; padding: 14px 24px; border: 2px solid transparent; border-radius: 999px;
       background: var(--gold); color: var(--navy);
       font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; text-decoration: none;
     }
     .btn.ghost { background: transparent; border-color: var(--navy); }
+    .btn.small { padding: 8px 16px; font-size: 14px; }
     .on-dark .btn.ghost { color: #fff; border-color: #fff; }
     .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     .hint { font-size: 14px; opacity: 0.75; margin: 12px 0 0; }
     .lbl { display: block; font-weight: 600; margin: 18px 0 6px; }
-    input[type="text"] {
+    input[type="text"], textarea {
       width: 100%; padding: 14px; font-size: 16px; font-family: inherit;
       color: var(--navy); background: #fff; border: 2px solid var(--line); border-radius: 14px;
     }
-    input[type="text"]:focus { outline: none; border-color: #ff9415; }
+    textarea { resize: vertical; line-height: 1.4; }
+    input[type="text"]:focus, textarea:focus { outline: none; border-color: #ff9415; }
     .err { color: var(--red); font-weight: 600; margin: 12px 0 0; }
     .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
     .kpi { background: var(--navy); color: #fff; border-radius: 20px; padding: 16px; }
@@ -52,9 +56,12 @@
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
     th:first-child, td:first-child { text-align: left; white-space: normal; }
+    td.why { text-align: left; white-space: normal; font-size: 13px; opacity: 0.8; min-width: 130px; }
+    th.why { text-align: left; }
     th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.7; }
     .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
     .tag.bad { background: var(--red); }
+    .tag.warn { background: var(--amber); }
     .tag.good { background: var(--green); }
     .tag.mid { background: #8a94a6; }
     .bar { height: 6px; border-radius: 3px; background: #e6eaf1; margin-top: 6px; min-width: 70px; }
@@ -62,14 +69,17 @@
     .insights { margin: 0; padding-left: 20px; line-height: 1.6; }
     .insights li { margin-bottom: 8px; }
     .note { font-size: 13px; opacity: 0.7; margin: 16px 0 0; }
-    #report { display: none; }
-    #report.show { display: block; }
+    .listbox { display: none; }
+    .listbox.show { display: block; }
+    .listbox textarea { min-height: 96px; }
+    #report, #q-report, #p-report, #actions { display: none; }
+    #report.show, #q-report.show, #p-report.show, #actions.show { display: block; }
     @media print {
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       body { background: #fff; color: var(--navy); }
       .noprint { display: none !important; }
       h1, .sub { color: var(--navy); }
-      .card { border: 1px solid var(--line); }
+      .card { border: 1px solid var(--line); break-inside: avoid; }
       .note { opacity: 1; }
     }
   </style>
@@ -77,10 +87,10 @@
 <body>
   <div class="wrap">
     <h1 class="noprint">Автоотчёт по рекламе</h1>
-    <p class="sub noprint">Загрузите выгрузку из Яндекс Директа, и отчёт соберётся за секунду. Данные остаются в вашем браузере и никуда не отправляются.</p>
+    <p class="sub noprint">Загрузите выгрузки из Яндекс Директа, и отчёт соберётся за секунду. Данные остаются в вашем браузере и никуда не отправляются.</p>
 
     <div class="card noprint">
-      <h2>1. Загрузите выгрузку</h2>
+      <h2>1. Выгрузка по кампаниям</h2>
       <div class="row">
         <label class="btn" for="file">Выбрать файл (CSV)</label>
         <input type="file" id="file" accept=".csv,.tsv,.txt" hidden>
@@ -93,6 +103,51 @@
 
       <p class="hint">Нужны колонки: Кампания, Расход, Клики, Конверсии (или Заявки). По желанию: Неделя или Дата, Показы. Подходят выгрузки из Мастера отчётов Директа в формате CSV или TSV.</p>
       <p class="err" id="error"></p>
+    </div>
+
+    <div class="card noprint">
+      <h2>2. Поисковые запросы (необязательно)</h2>
+      <div class="row">
+        <label class="btn" for="q-file">Выбрать файл (CSV)</label>
+        <input type="file" id="q-file" accept=".csv,.tsv,.txt" hidden>
+        <button type="button" class="btn ghost" id="q-demo">Показать на примере</button>
+      </div>
+      <p class="hint" id="q-fname"></p>
+
+      <label class="lbl" for="stop">Стоп-слова: что для этого клиента считается мусором</label>
+      <textarea id="stop" rows="3">бесплатн, скачат, торрент, реферат, курсовая, дипломн, вакансии, вакансия, работа, обучени, курсы, своими руками, самостоятельно, что такое, википеди, форум</textarea>
+      <p class="hint">Через запятую. Достаточно начала слова: «бесплатн» найдёт «бесплатно» и «бесплатный». Список подстраивайте под клиента: для студии «обучение» это мусор, а для школы нет.</p>
+
+      <label class="lbl" for="product">Слова продукта клиента (необязательно)</label>
+      <input type="text" id="product" placeholder="Например: перманентн, татуаж, брови, губ">
+      <p class="hint">Если заполнить, запросы без этих слов и без заявок будут помечены как «Не по теме».</p>
+
+      <p class="hint">Нужны колонки: Поисковый запрос, Расход, Клики, Конверсии. Отчёт «Поисковые запросы» Мастера отчётов Директа.</p>
+      <p class="err" id="q-error"></p>
+    </div>
+
+    <div class="card noprint">
+      <h2>3. Площадки РСЯ, мусорный трафик (необязательно)</h2>
+      <div class="row">
+        <label class="btn" for="p-file">Выбрать файл (CSV)</label>
+        <input type="file" id="p-file" accept=".csv,.tsv,.txt" hidden>
+        <button type="button" class="btn ghost" id="p-demo">Показать на примере</button>
+      </div>
+      <p class="hint" id="p-fname"></p>
+      <p class="hint">Нужны колонки: Площадка, Расход, Клики, Конверсии. Чтобы находить мусор точнее, добавьте «Показатель отказов» или «Длительность визита». «Глубина просмотра» показывается в таблице, но мусором не считается. Без этих колонок будут помечены только приложения и площадки без заявок.</p>
+
+      <h3>Защита от ложного «мусора»</h3>
+      <p class="hint" style="margin-top: 0">Площадка могла давать заявки раньше, а в этом периоде просто не дать. Загрузите выгрузку площадок за больший период (например, 90 дней): площадки, которые там давали заявки, получат метку «Проверить», а не «Мусор».</p>
+      <div class="row" style="margin-top: 10px">
+        <label class="btn small" for="ph-file">Выгрузка за больший период</label>
+        <input type="file" id="ph-file" accept=".csv,.tsv,.txt" hidden>
+        <button type="button" class="btn ghost small" id="ph-demo">Показать на примере</button>
+      </div>
+      <p class="hint" id="ph-fname"></p>
+      <label class="lbl" for="p-keep">Площадки, которые точно нужны (необязательно)</label>
+      <textarea id="p-keep" rows="2" placeholder="Например: example.ru, com.app.name"></textarea>
+      <p class="hint">Через запятую или с новой строки. Эти площадки не попадут в мусор.</p>
+      <p class="err" id="p-error"></p>
     </div>
 
     <div id="report">
@@ -130,7 +185,73 @@
           </table>
         </div>
       </div>
+    </div>
 
+    <div id="q-report">
+      <div class="card">
+        <h2>Поисковые запросы: что уходит в мусор</h2>
+        <div class="kpis" id="q-kpis"></div>
+        <h3>Выводы</h3>
+        <ul class="insights" id="q-insights"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Запросы, на которые стоит посмотреть</h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Запрос</th><th>Расход</th><th>Клики</th><th>Заявки</th><th>Оценка</th><th class="why">Почему</th></tr>
+            </thead>
+            <tbody id="q-body"></tbody>
+          </table>
+        </div>
+        <p class="note" id="q-more"></p>
+
+        <div class="listbox" id="q-minus-box">
+          <h3>Минус-слова: точно стоит добавить (по стоп-словам)</h3>
+          <textarea id="q-minus" rows="4" readonly></textarea>
+          <p style="margin: 10px 0 0"><button type="button" class="btn small noprint" id="q-minus-copy">Скопировать минус-слова</button></p>
+        </div>
+
+        <div class="listbox" id="q-cand-box">
+          <h3>Кандидаты в минус-слова: проверьте вручную</h3>
+          <textarea id="q-cand" rows="4" readonly></textarea>
+          <p class="hint">Слова встречаются только в запросах без заявок. Слово может быть безвредным в других запросах, поэтому не добавляйте список целиком, не проверив.</p>
+          <p style="margin: 10px 0 0"><button type="button" class="btn small noprint" id="q-cand-copy">Скопировать кандидатов</button></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="p-report">
+      <div class="card">
+        <h2>Площадки РСЯ: мусорный трафик</h2>
+        <div class="kpis" id="p-kpis"></div>
+        <h3>Выводы</h3>
+        <ul class="insights" id="p-insights"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Площадки, на которые стоит посмотреть</h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Площадка</th><th>Расход</th><th>Клики</th><th>Заявки</th><th>Отказы</th><th>Время визита</th><th>Глубина</th><th>Оценка</th></tr>
+            </thead>
+            <tbody id="p-body"></tbody>
+          </table>
+        </div>
+        <p class="note" id="p-more"></p>
+
+        <div class="listbox" id="p-list-box">
+          <h3>Площадки для исключения (мусор)</h3>
+          <textarea id="p-list" rows="4" readonly></textarea>
+          <p class="hint">Перед отключением проверьте площадки в кабинете: данные за короткий период бывают случайными.</p>
+          <p style="margin: 10px 0 0"><button type="button" class="btn small noprint" id="p-list-copy">Скопировать список</button></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="actions">
       <div class="row noprint on-dark">
         <button type="button" class="btn" id="copy">Скопировать текст</button>
         <button type="button" class="btn ghost" id="print">Сохранить в PDF</button>
@@ -141,7 +262,19 @@
 
   <script>
     // ---- PURE START
-    // Разбор файла и расчёты. Здесь нет ничего про страницу, только данные.
+    // Разбор файлов и расчёты. Здесь нет ничего про страницу, только данные.
+
+    // Все пороги в одном месте: меняйте здесь.
+    var CONFIG = {
+      expensiveFactor: 1.5,   // кампания «Дорого», если цена заявки выше средней во столько раз
+      goodFactor: 0.7,        // кампания «Эффективно», если цена заявки ниже средней во столько раз
+      fewShare: 3,            // доля расхода (%), ниже которой данных «мало»
+      minClicks: 3,           // запросы: с какого числа кликов считаем запрос без заявок
+      placeMinClicks: 5,      // площадки: с какого числа кликов оцениваем площадку
+      bounceJunk: 70,         // площадки: отказы (%) от этого значения считаем плохим сигналом
+      durationJunk: 15,       // площадки: визит короче этого числа секунд считаем плохим сигналом
+      minusCandidates: 15     // сколько кандидатов в минус-слова показывать
+    };
 
     var ALIASES = {
       campaign: ["кампани", "campaign"],
@@ -152,6 +285,31 @@
       conversions: ["конверсии", "conversions", "заявки", "лиды", "leads"]
     };
     var EXCLUDE = ["цена", "стоимость", "cpa", "cpc", "%", "ctr", "доля"];
+
+    var Q_ALIASES = {
+      query: ["поисковый запрос", "поисковые запросы", "search query", "запрос", "query"],
+      impressions: ["показы", "impressions"],
+      clicks: ["клики", "clicks"],
+      cost: ["расход", "cost", "затраты"],
+      conversions: ["конверсии", "conversions", "заявки", "лиды", "leads"]
+    };
+    var Q_EXCLUDE = ["цена", "стоимость", "cpa", "cpc", "ctr", "доля"];
+
+    var P_ALIASES = {
+      place: ["площадк", "placement", "домен"],
+      impressions: ["показы", "impressions"],
+      clicks: ["клики", "clicks"],
+      cost: ["расход", "cost", "затраты"],
+      conversions: ["конверсии", "conversions", "заявки", "лиды", "leads"],
+      bounce: ["отказ", "bounce"],
+      depth: ["глубин", "depth", "pageviews"],
+      duration: ["длительност", "duration", "время на сайте", "время визита"]
+    };
+    var P_EXCLUDE = Q_EXCLUDE.concat(["тип"]);
+
+    var FUNC_WORDS = ["для", "как", "что", "это", "при", "или", "без", "над", "под", "про", "его", "еще", "все",
+      "они", "мне", "вам", "где", "так", "там", "тут", "чем", "кто", "нет", "уже", "если", "чтобы", "можно",
+      "такое", "этого", "после", "перед", "какой", "какая", "какие"];
 
     function detectDelimiter(lines) {
       var delims = [";", "\t", ","];
@@ -192,7 +350,7 @@
     }
 
     function parseCSV(text) {
-      text = String(text).replace(/^\uFEFF/, "");
+      text = String(text).replace(/^﻿/, "");
       var lines = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
       var delim = detectDelimiter(lines.slice(0, 12));
       return lines.map(function (l) { return parseLine(l, delim); });
@@ -200,9 +358,22 @@
 
     function toNum(s) {
       if (s === undefined || s === null) { return 0; }
-      s = String(s).replace(/[\s\u00a0₽%]/g, "").replace(/руб\.?/i, "").replace(",", ".");
+      s = String(s).replace(/[\s ₽%]/g, "").replace(/руб\.?/i, "").replace(",", ".");
       var n = parseFloat(s);
       return isNaN(n) ? 0 : n;
+    }
+
+    function hasValue(s) {
+      return s !== undefined && s !== null && !/^[-–—\s]*$/.test(String(s));
+    }
+
+    function parseDuration(s) {
+      s = String(s).trim();
+      var m = s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+      if (m) {
+        return m[3] !== undefined ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : (+m[1]) * 60 + (+m[2]);
+      }
+      return toNum(s);
     }
 
     function parseDate(s) {
@@ -232,55 +403,68 @@
     }
     function num(n) { return (Math.round(n * 10) / 10).toLocaleString("ru-RU"); }
     function pct(n) { return (Math.round(n * 10) / 10).toString().replace(".", ",") + "%"; }
+    function plural(n, one, few, many) {
+      var m = n % 100;
+      var d = n % 10;
+      if (m >= 11 && m <= 14) { return many; }
+      if (d === 1) { return one; }
+      if (d >= 2 && d <= 4) { return few; }
+      return many;
+    }
     function change(a, b) {
       if (!b) { return "—"; }
       var p = Math.round((a - b) / b * 100);
       return (p > 0 ? "+" : p < 0 ? "−" : "") + Math.abs(p) + "%";
     }
 
-    function mapColumns(row) {
+    // Какая колонка что значит. Каждая колонка получает не больше одного смысла.
+    function mapColumns(row, aliases, exclude) {
       var map = {};
+      var fields = Object.keys(aliases);
       row.forEach(function (cell, idx) {
         var h = String(cell).toLowerCase();
-        var excluded = EXCLUDE.some(function (w) { return h.indexOf(w) !== -1; });
-        if (excluded) { return; }
-        Object.keys(ALIASES).forEach(function (field) {
-          if (map[field] !== undefined) { return; }
-          var hit = ALIASES[field].some(function (a) { return h.indexOf(a) !== -1; });
-          if (hit) { map[field] = idx; }
-        });
+        if (exclude.some(function (w) { return h.indexOf(w) !== -1; })) { return; }
+        for (var k = 0; k < fields.length; k++) {
+          var f = fields[k];
+          if (map[f] !== undefined) { continue; }
+          if (aliases[f].some(function (a) { return h.indexOf(a) !== -1; })) { map[f] = idx; break; }
+        }
       });
       return map;
     }
 
-    function analyze(rows) {
-      var headerIdx = -1;
-      var map = null;
-      var i;
-      for (i = 0; i < Math.min(rows.length, 20); i++) {
-        var m = mapColumns(rows[i]);
-        var distinct = {};
-        Object.keys(m).forEach(function (k) { distinct[m[k]] = 1; });
-        if (m.cost !== undefined && Object.keys(distinct).length >= 3) {
-          headerIdx = i;
-          map = m;
-          break;
-        }
+    // Шапка таблицы ищется среди первых 20 строк: сверху бывают служебные строки.
+    function findHeader(rows, aliases, exclude, required, minFields) {
+      for (var i = 0; i < Math.min(rows.length, 20); i++) {
+        var m = mapColumns(rows[i], aliases, exclude);
+        var ok = required.every(function (f) { return m[f] !== undefined; });
+        if (ok && Object.keys(m).length >= minFields) { return { idx: i, map: m }; }
       }
-      if (!map) {
+      return null;
+    }
+
+    var TOTAL_RE = /^(итого|всего|total)/;
+
+    // ---------- Кампании
+
+    function analyze(rows) {
+      var h = findHeader(rows, ALIASES, EXCLUDE, ["cost"], 3);
+      if (!h) {
         return { error: "В файле не найдена шапка таблицы. Нужны колонки: Кампания, Расход, Клики, Конверсии." };
       }
+      var map = h.map;
+      var headerIdx = h.idx;
       if (map.conversions === undefined) {
         return { error: "В файле нет колонки с конверсиями (например, «Конверсии» или «Заявки»). Добавьте её в выгрузку Мастера отчётов." };
       }
 
       var recs = [];
+      var i;
       for (i = headerIdx + 1; i < rows.length; i++) {
         var r = rows[i];
         var name = map.campaign !== undefined ? String(r[map.campaign] || "").trim() : "Все данные";
         var first = String(r[0] || "").trim().toLowerCase();
-        var isTotal = /^(итого|всего|total)/;
-        if (isTotal.test(first) || isTotal.test(name.toLowerCase())) { continue; }
+        if (TOTAL_RE.test(first) || TOTAL_RE.test(name.toLowerCase())) { continue; }
         var rec = {
           name: name || "Без названия",
           date: map.date !== undefined ? parseDate(r[map.date]) : null,
@@ -330,10 +514,10 @@
       campaigns.forEach(function (c) {
         c.cpa = c.conversions > 0 ? c.cost / c.conversions : null;
         c.share = total.cost > 0 ? c.cost / total.cost * 100 : 0;
-        if (c.share < 3) { c.flag = "few"; }
+        if (c.share < CONFIG.fewShare) { c.flag = "few"; }
         else if (c.conversions === 0) { c.flag = "bad_none"; }
-        else if (total.cpa && c.cpa > total.cpa * 1.3) { c.flag = "bad_cpa"; }
-        else if (total.cpa && c.cpa < total.cpa * 0.7) { c.flag = "good"; }
+        else if (total.cpa && c.cpa > total.cpa * CONFIG.expensiveFactor) { c.flag = "bad_cpa"; }
+        else if (total.cpa && c.cpa < total.cpa * CONFIG.goodFactor) { c.flag = "good"; }
         else { c.flag = "mid"; }
       });
       campaigns.sort(function (a, b) { return b.cost - a.cost; });
@@ -397,6 +581,356 @@
 
       return out;
     }
+
+    // ---------- Поисковые запросы
+
+    function normText(s) {
+      return String(s).toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9\- ]+/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function parseList(s) {
+      return String(s || "").split(/[,\n;]+/).map(normText).filter(Boolean);
+    }
+
+    // Слово или фраза найдены с начала слова: «бесплатн» найдёт «бесплатно».
+    function hasPhrase(key, phrase) {
+      return (" " + key).indexOf(" " + phrase) !== -1;
+    }
+
+    function matchedForm(key, stop) {
+      if (stop.indexOf(" ") !== -1) { return stop; }
+      var toks = key.split(" ");
+      for (var i = 0; i < toks.length; i++) {
+        if (toks[i].indexOf(stop) === 0) { return toks[i]; }
+      }
+      return stop;
+    }
+
+    // Начало слова из 4 букв: «перманентного» и «перманентный» считаются одним словом.
+    function stem4(t) { return t.length > 4 ? t.slice(0, 4) : t; }
+
+    function analyzeQueries(rows, opts) {
+      opts = opts || {};
+      var stops = opts.stop || [];
+      var product = opts.product || [];
+
+      var h = findHeader(rows, Q_ALIASES, Q_EXCLUDE, ["query", "cost"], 3);
+      if (!h) {
+        return { error: "В файле не найдена шапка таблицы запросов. Нужны колонки: Поисковый запрос, Расход, Клики, Конверсии." };
+      }
+      var map = h.map;
+      if (map.conversions === undefined) {
+        return { error: "В файле запросов нет колонки с конверсиями (например, «Конверсии» или «Заявки»). Добавьте её в выгрузку." };
+      }
+
+      var by = Object.create(null);
+      var order = [];
+      for (var i = h.idx + 1; i < rows.length; i++) {
+        var r = rows[i];
+        var name = String(r[map.query] || "").trim();
+        var first = String(r[0] || "").trim().toLowerCase();
+        if (!hasValue(name) || TOTAL_RE.test(first) || TOTAL_RE.test(name.toLowerCase())) { continue; }
+        var key = normText(name) || name.toLowerCase();
+        var q = by[key];
+        if (!q) {
+          q = by[key] = { name: name, key: key, cost: 0, clicks: 0, impressions: 0, conversions: 0 };
+          order.push(key);
+        }
+        q.cost += toNum(r[map.cost]);
+        q.clicks += map.clicks !== undefined ? toNum(r[map.clicks]) : 0;
+        q.impressions += map.impressions !== undefined ? toNum(r[map.impressions]) : 0;
+        q.conversions += toNum(r[map.conversions]);
+      }
+      var queries = order.map(function (k) { return by[k]; }).filter(function (q) { return q.cost || q.clicks || q.impressions; });
+      if (!queries.length) { return { error: "В файле запросов нет строк с данными." }; }
+
+      var summary = { cost: 0, clicks: 0, conversions: 0, junkStopCost: 0, offtopicCost: 0, noleadCost: 0, junkCost: 0, junkShare: 0 };
+
+      var groups = { junk: [], offtopic: [], check: [], nolead: [], good: [], normal: [] };
+      var stopAgg = Object.create(null);
+      var goodStems = Object.create(null);
+
+      queries.forEach(function (q) {
+        summary.cost += q.cost;
+        summary.clicks += q.clicks;
+        summary.conversions += q.conversions;
+        if (q.conversions > 0) {
+          q.key.split(" ").forEach(function (t) { goodStems[stem4(t)] = 1; });
+        }
+      });
+
+      queries.forEach(function (q) {
+        q.stopHits = stops.filter(function (w) { return hasPhrase(q.key, w); });
+        q.productHit = product.length ? product.some(function (w) { return hasPhrase(q.key, w); }) : null;
+
+        if (q.stopHits.length) {
+          q.flag = q.conversions > 0 ? "check" : "junk";
+        } else if (q.conversions > 0) {
+          q.flag = "good";
+        } else if (q.clicks >= CONFIG.minClicks) {
+          q.flag = (product.length && !q.productHit) ? "offtopic" : "nolead";
+        } else {
+          q.flag = "normal";
+        }
+        groups[q.flag].push(q);
+
+        if (q.flag === "junk") {
+          q.stopHits.forEach(function (w) {
+            var form = matchedForm(q.key, w);
+            var e = stopAgg[form];
+            if (!e) { e = stopAgg[form] = { word: form, cost: 0, count: 0 }; }
+            e.cost += q.cost;
+            e.count += 1;
+          });
+        }
+      });
+
+      function sumCost(list) { return list.reduce(function (s, q) { return s + q.cost; }, 0); }
+      function byCostDesc(x, y) { return y.cost - x.cost; }
+      Object.keys(groups).forEach(function (k) { groups[k].sort(byCostDesc); });
+
+      summary.junkStopCost = sumCost(groups.junk);
+      summary.offtopicCost = sumCost(groups.offtopic);
+      summary.noleadCost = sumCost(groups.nolead);
+      summary.junkCost = summary.junkStopCost + summary.offtopicCost;
+      summary.junkShare = summary.cost > 0 ? summary.junkCost / summary.cost * 100 : 0;
+
+      // Слова, которые встречаются только в запросах без заявок
+      var cand = Object.create(null);
+      groups.nolead.concat(groups.offtopic).forEach(function (q) {
+        var seen = Object.create(null);
+        q.key.split(" ").forEach(function (t) {
+          if (seen[t]) { return; }
+          seen[t] = 1;
+          if (t.length < 3 || /^\d+$/.test(t) || FUNC_WORDS.indexOf(t) !== -1) { return; }
+          if (goodStems[stem4(t)]) { return; }
+          if (product.some(function (p) { return t.indexOf(p) === 0; })) { return; }
+          if (stops.some(function (s) { return t.indexOf(s) === 0; })) { return; }
+          var e = cand[t];
+          if (!e) { e = cand[t] = { word: t, cost: 0, count: 0 }; }
+          e.cost += q.cost;
+          e.count += 1;
+        });
+      });
+      var minusWords = Object.keys(cand).map(function (k) { return cand[k]; })
+        .filter(function (e) { return e.cost > 0; })
+        .sort(byCostDesc)
+        .slice(0, CONFIG.minusCandidates);
+
+      var minusStop = Object.keys(stopAgg).map(function (k) { return stopAgg[k]; }).sort(byCostDesc);
+
+      var problems = groups.junk.concat(groups.offtopic, groups.check, groups.nolead).sort(byCostDesc);
+
+      var topGood = queries.filter(function (q) { return q.conversions > 0; })
+        .sort(function (x, y) { return y.conversions - x.conversions || x.cost - y.cost; });
+
+      return {
+        queries: queries, summary: summary, junk: groups.junk, offtopic: groups.offtopic, check: groups.check,
+        nolead: groups.nolead, good: groups.good, problems: problems, minusStop: minusStop, minusWords: minusWords,
+        topGood: topGood
+      };
+    }
+
+    function topQueries(list, n) {
+      return list.slice(0, n).map(function (q) { return "«" + q.name + "» (" + money(q.cost) + ")"; }).join(", ");
+    }
+
+    function buildQueryInsights(a) {
+      var s = a.summary;
+      var out = [];
+      out.push("Проанализировано " + a.queries.length + " " + plural(a.queries.length, "запрос", "запроса", "запросов") + " на " + money(s.cost) + ", заявок по ним: " + num(s.conversions) + ".");
+
+      if (a.junk.length) {
+        out.push("Мусорные запросы (со стоп-словами и без единой заявки): " + a.junk.length + " шт., " + money(s.junkStopCost) +
+          " (" + pct(s.cost > 0 ? s.junkStopCost / s.cost * 100 : 0) + " расхода по запросам). Больше всего ушло на " + topQueries(a.junk, 3) +
+          ". Слова из этих запросов стоит добавить в минус-слова.");
+      } else {
+        out.push("Запросов со стоп-словами без заявок не найдено. Если для клиента мусором считаются другие слова, добавьте их в список стоп-слов.");
+      }
+
+      if (a.offtopic.length) {
+        out.push("Запросы не по теме (нет слов продукта, есть клики, нет заявок): " + a.offtopic.length + " шт., " + money(s.offtopicCost) +
+          ". Больше всего ушло на " + topQueries(a.offtopic, 3) + ".");
+      }
+
+      if (a.nolead.length) {
+        var noleadNote = a.nolead.length + " " + plural(a.nolead.length, "запрос", "запроса", "запросов") + " с кликами, но без заявок, " + money(s.noleadCost) + ". ";
+        out.push("Ещё " + noleadNote + "Это не обязательно мусор: причина может быть в посадочной странице, цене или информационном интересе человека. Просмотрите их и решите вручную.");
+      }
+
+      if (a.check.length) {
+        out.push("Есть стоп-слово, но запрос приносит заявки: " + topQueries(a.check, 3) + ". Автоматически минусовать такие запросы не стоит.");
+      }
+
+      if (a.minusWords.length) {
+        out.push("Слова, которые встречаются только в запросах без заявок: " +
+          a.minusWords.slice(0, 8).map(function (w) { return w.word; }).join(", ") +
+          ". Это кандидаты в минус-слова, проверьте каждое отдельно.");
+      }
+
+      if (a.topGood.length) {
+        out.push("Больше всего заявок дают: " + a.topGood.slice(0, 3).map(function (q) {
+          return "«" + q.name + "» (" + num(q.conversions) + ")";
+        }).join(", ") + ".");
+      }
+      return out;
+    }
+
+    // ---------- Площадки РСЯ
+
+    var TLDS = ["ru", "com", "org", "net", "io", "me", "app", "su", "рф"];
+
+    // Идентификаторы приложений выглядят как com.game.name, а не как сайт.
+    function isAppLike(name) {
+      var parts = String(name).toLowerCase().split(".");
+      if (parts.length < 3) { return false; }
+      if (["com", "ru", "org", "net", "io", "me", "app"].indexOf(parts[0]) === -1) { return false; }
+      if (TLDS.indexOf(parts[parts.length - 1]) !== -1) { return false; }
+      return /^[a-z0-9_.\-]+$/.test(name.toLowerCase());
+    }
+
+    function analyzePlaces(rows, opts) {
+      var history = (opts && opts.history) || {};
+      var h = findHeader(rows, P_ALIASES, P_EXCLUDE, ["place", "cost"], 3);
+      if (!h) {
+        return { error: "В файле не найдена шапка таблицы площадок. Нужны колонки: Площадка, Расход, Клики, Конверсии." };
+      }
+      var map = h.map;
+      if (map.conversions === undefined) {
+        return { error: "В файле площадок нет колонки с конверсиями (например, «Конверсии» или «Заявки»). Добавьте её в выгрузку." };
+      }
+      var hasBounce = map.bounce !== undefined;
+      var hasDuration = map.duration !== undefined;
+      var hasDepth = map.depth !== undefined;
+
+      var by = Object.create(null);
+      var order = [];
+      for (var i = h.idx + 1; i < rows.length; i++) {
+        var r = rows[i];
+        var name = String(r[map.place] || "").trim();
+        var first = String(r[0] || "").trim().toLowerCase();
+        if (!hasValue(name) || TOTAL_RE.test(first) || TOTAL_RE.test(name.toLowerCase())) { continue; }
+        var key = name.toLowerCase();
+        var p = by[key];
+        if (!p) {
+          p = by[key] = { name: name, key: key, cost: 0, clicks: 0, impressions: 0, conversions: 0, bSum: 0, bW: 0, dSum: 0, dW: 0, gSum: 0, gW: 0 };
+          order.push(key);
+        }
+        var clicks = map.clicks !== undefined ? toNum(r[map.clicks]) : 0;
+        p.cost += toNum(r[map.cost]);
+        p.clicks += clicks;
+        p.impressions += map.impressions !== undefined ? toNum(r[map.impressions]) : 0;
+        p.conversions += toNum(r[map.conversions]);
+        var w = clicks > 0 ? clicks : 1;
+        if (hasBounce && hasValue(r[map.bounce])) { p.bSum += toNum(r[map.bounce]) * w; p.bW += w; }
+        if (hasDuration && hasValue(r[map.duration])) { p.dSum += parseDuration(r[map.duration]) * w; p.dW += w; }
+        if (hasDepth && hasValue(r[map.depth])) { p.gSum += toNum(r[map.depth]) * w; p.gW += w; }
+      }
+      var places = order.map(function (k) { return by[k]; }).filter(function (p) { return p.cost || p.clicks || p.impressions; });
+      if (!places.length) { return { error: "В файле площадок нет строк с данными." }; }
+
+      var summary = { cost: 0, clicks: 0, conversions: 0, junkCost: 0, junkClicks: 0, noleadCost: 0, checkCost: 0, junkShare: 0, appCount: 0 };
+      var groups = { junk: [], check: [], nolead: [], good: [], few: [] };
+
+      places.forEach(function (p) {
+        p.bounce = p.bW > 0 ? p.bSum / p.bW : null;
+        p.duration = p.dW > 0 ? p.dSum / p.dW : null;
+        p.depth = p.gW > 0 ? p.gSum / p.gW : null;
+        p.app = isAppLike(p.name);
+        summary.cost += p.cost;
+        summary.clicks += p.clicks;
+        summary.conversions += p.conversions;
+
+        p.reasons = [];
+        p.wasGood = !!history[p.key];
+        if (p.clicks < CONFIG.placeMinClicks) {
+          p.flag = "few";
+        } else if (p.conversions > 0) {
+          p.flag = "good";
+        } else {
+          if (p.bounce !== null && p.bounce >= CONFIG.bounceJunk) { p.reasons.push("отказы " + Math.round(p.bounce) + "%"); }
+          if (p.duration !== null && p.duration < CONFIG.durationJunk) { p.reasons.push("визит " + Math.round(p.duration) + " сек"); }
+          if (p.app) { p.reasons.push("мобильное приложение"); }
+          if (p.wasGood) {
+            p.reasons.push("давала заявки раньше");
+            p.flag = "check";
+          } else {
+            p.flag = p.reasons.length ? "junk" : "nolead";
+          }
+        }
+        groups[p.flag].push(p);
+      });
+
+      function byCostDesc(x, y) { return y.cost - x.cost; }
+      Object.keys(groups).forEach(function (k) { groups[k].sort(byCostDesc); });
+
+      groups.junk.forEach(function (p) {
+        summary.junkCost += p.cost;
+        summary.junkClicks += p.clicks;
+        if (p.app) { summary.appCount += 1; }
+      });
+      groups.nolead.forEach(function (p) { summary.noleadCost += p.cost; });
+      groups.check.forEach(function (p) { summary.checkCost += p.cost; });
+      summary.junkShare = summary.cost > 0 ? summary.junkCost / summary.cost * 100 : 0;
+
+      return {
+        places: places, summary: summary, junk: groups.junk, check: groups.check, nolead: groups.nolead, good: groups.good, few: groups.few,
+        problems: groups.junk.concat(groups.check, groups.nolead).sort(byCostDesc),
+        excludeList: groups.junk.map(function (p) { return p.name; }),
+        hasBounce: hasBounce, hasDuration: hasDuration, hasDepth: hasDepth
+      };
+    }
+
+    function parseNames(s) {
+      return String(s || "").split(/[,\n;]+/).map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean);
+    }
+
+    // Площадки, которые давали заявки в выгрузке за больший период
+    function placesWithConversions(rows) {
+      var a = analyzePlaces(rows);
+      if (a.error) { return { error: a.error }; }
+      var map = Object.create(null);
+      a.places.forEach(function (p) { if (p.conversions > 0) { map[p.key] = 1; } });
+      return { map: map, count: Object.keys(map).length };
+    }
+
+    function topPlaces(list, n) {
+      return list.slice(0, n).map(function (p) { return "«" + p.name + "» (" + money(p.cost) + ")"; }).join(", ");
+    }
+
+    function buildPlaceInsights(a) {
+      var s = a.summary;
+      var out = [];
+      out.push("Проанализировано " + a.places.length + " " + plural(a.places.length, "площадка", "площадки", "площадок") + ": расход " + money(s.cost) + ", заявок " + num(s.conversions) + ".");
+
+      if (a.junk.length) {
+        var line = "Мусорный трафик: " + a.junk.length + " " + plural(a.junk.length, "площадка", "площадки", "площадок") + ", " + money(s.junkCost) + " (" + pct(s.junkShare) + " расхода по площадкам), заявок ноль. Больше всего ушло на " + topPlaces(a.junk, 3) + ".";
+        if (s.appCount) { line += " Из них мобильных приложений: " + s.appCount + "."; }
+        out.push(line + " Это данные за выбранный период: загрузите выгрузку за больший период, чтобы не исключить площадки, которые давали заявки раньше.");
+      } else {
+        out.push("Явного мусорного трафика по заданным признакам не найдено.");
+      }
+
+      if (a.check.length) {
+        out.push("Плохие показатели в этом периоде, но заявки площадки давали раньше: " + topPlaces(a.check, 3) + " (всего " + a.check.length + ", " + money(a.summary.checkCost) + "). Сразу исключать их не стоит: сначала проверьте, что изменилось.");
+      }
+
+      if (a.nolead.length) {
+        out.push("Ещё " + a.nolead.length + " " + plural(a.nolead.length, "площадка", "площадки", "площадок") + " с кликами, но без заявок, " + money(s.noleadCost) + ". Признаков мусора у них нет: сначала проверьте, как ведёт себя посадочная страница.");
+      }
+
+      if (!a.hasBounce && !a.hasDuration) {
+        out.push("В файле нет данных об отказах и длительности визита, поэтому проверены только приложения и площадки без заявок. Добавьте колонки «Показатель отказов» или «Длительность визита», чтобы находить мусор точнее.");
+      }
+
+      var good = a.good.slice().sort(function (x, y) { return y.conversions - x.conversions; });
+      if (good.length) {
+        out.push("Больше всего заявок дают: " + good.slice(0, 3).map(function (p) {
+          return "«" + p.name + "» (" + num(p.conversions) + ")";
+        }).join(", ") + ".");
+      }
+      return out;
+    }
     // ---- PURE END
 
     // ---- Страница: показ данных и кнопки
@@ -424,7 +958,75 @@
       "26.10.2026;Поиск — конкуренты;3200;145;9300,00;2"
     ].join("\n");
 
-    var state = { analysis: null };
+    var SAMPLE_Q = [
+      "Поисковый запрос;Клики;Расход;Конверсии",
+      "перманентный макияж губ;60;2310,00;6",
+      "перманентный макияж бровей цена;45;1980,00;5",
+      "студия перманентного макияжа волгоград;38;1700,00;5",
+      "татуаж бровей волгоград;52;2100,00;4",
+      "перманентный макияж запись;22;880,00;3",
+      "перманентный макияж бровей обучение;35;1400,00;0",
+      "курсы перманентного макияжа;41;1760,00;0",
+      "перманентный макияж своими руками;18;720,00;0",
+      "перманентный макияж бесплатно;12;470,00;0",
+      "перманентный макияж вакансии мастер;15;640,00;0",
+      "работа мастером перманентного макияжа;20;800,00;0",
+      "перманентный макияж фото до и после;30;1150,00;0",
+      "перманентный макияж отзывы;25;1000,00;1",
+      "перманентный макияж противопоказания;28;1100,00;0",
+      "как делают перманентный макияж;24;930,00;0",
+      "перманентный макияж что это такое;16;640,00;0",
+      "перманентный макияж бровей больно ли;19;740,00;0",
+      "оборудование для перманентного макияжа купить;33;1650,00;0",
+      "аппарат для перманентного макияжа;27;1400,00;0",
+      "пигменты для татуажа;21;980,00;0",
+      "татуаж бровей цена;31;1300,00;3",
+      "татуаж губ волгоград;29;1250,00;3",
+      "перманентный макияж век;14;560,00;2",
+      "салон красоты перманентный макияж;17;700,00;1",
+      "перманентный макияж реферат;5;190,00;0",
+      "перманентный макияж скачать;4;150,00;0",
+      "перманентный макияж москва;9;420,00;0",
+      "перманентный макияж санкт-петербург;7;330,00;0",
+      "брови;2;90,00;0"
+    ].join("\n");
+
+    var SAMPLE_P = [
+      "Площадка;Клики;Расход;Конверсии;Отказы, %;Длительность визита, сек;Глубина просмотра",
+      "yandex.ru;120;4100,00;5;42;85;2,4",
+      "dzen.ru;80;2600,00;3;48;70;2,1",
+      "mail.ru;50;1700,00;2;51;60;1,9",
+      "com.game.puzzlekids;95;2100,00;0;92;4;1,0",
+      "ru.mobile.casino.slots;70;1500,00;0;95;3;1,0",
+      "com.photo.editor.free;64;1300,00;0;90;5;1,0",
+      "tv-serials-online.ru;55;1250,00;0;88;8;1,1",
+      "recipes-cooking.ru;40;980,00;0;75;14;1,2",
+      "beauty-blog.ru;35;1100,00;2;55;55;2,8",
+      "vk.com;60;1900,00;4;44;75;2,6",
+      "news-portal.ru;22;600,00;0;60;25;1,5",
+      "com.weather.live;30;700,00;0;80;12;1,1",
+      "small-site.ru;3;80,00;0;100;2;1,0"
+    ].join("\n");
+
+    var SAMPLE_P_HIST = [
+      "Площадка;Клики;Расход;Конверсии",
+      "yandex.ru;340;11800,00;14",
+      "dzen.ru;230;7400,00;9",
+      "mail.ru;150;4900,00;6",
+      "com.game.puzzlekids;280;6200,00;0",
+      "ru.mobile.casino.slots;210;4500,00;0",
+      "com.photo.editor.free;190;3900,00;0",
+      "tv-serials-online.ru;160;3700,00;0",
+      "recipes-cooking.ru;120;2900,00;3",
+      "beauty-blog.ru;100;3200,00;5",
+      "vk.com;170;5300,00;11",
+      "news-portal.ru;70;1900,00;1",
+      "com.weather.live;90;2100,00;2"
+    ].join("\n");
+
+    var DEMO_PRODUCT = "перманентн, татуаж, брови, губ, век";
+
+    var state = { analysis: null, queries: null, places: null, qRows: null, qLabel: "", pRows: null, pLabel: "", pHist: null };
 
     function $(id) { return document.getElementById(id); }
 
@@ -433,11 +1035,43 @@
       return String(s).replace(/[&<>"']/g, function (ch) { return map[ch]; });
     }
 
+    function kpiHtml(items) {
+      return items.map(function (k) {
+        return '<div class="kpi"><div class="l">' + k[0] + '</div><div class="v">' + k[1] + '</div></div>';
+      }).join("");
+    }
+
+    function listHtml(items) {
+      return items.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("");
+    }
+
+    function refreshActions() {
+      var any = state.analysis || state.queries || state.places;
+      $("actions").classList.toggle("show", !!any);
+    }
+
     var TAGS = {
       bad_none: ["bad", "Нет заявок"],
       bad_cpa: ["bad", "Дорого"],
       good: ["good", "Эффективно"],
       mid: ["mid", "В норме"],
+      few: ["mid", "Мало данных"]
+    };
+
+    var QTAGS = {
+      junk: ["bad", "Мусор"],
+      offtopic: ["bad", "Не по теме"],
+      check: ["warn", "Проверить"],
+      nolead: ["warn", "Без заявок"],
+      good: ["good", "Даёт заявки"],
+      normal: ["mid", "Мало данных"]
+    };
+
+    var PTAGS = {
+      junk: ["bad", "Мусор"],
+      check: ["warn", "Проверить"],
+      nolead: ["warn", "Без заявок"],
+      good: ["good", "Даёт заявки"],
       few: ["mid", "Мало данных"]
     };
 
@@ -450,21 +1084,16 @@
       $("r-title").textContent = project ? "Отчёт по рекламе: " + project : "Отчёт по рекламе";
       $("r-period").textContent = a.period ? "Период: " + a.period : "";
 
-      var kpis = [
+      $("kpis").innerHTML = kpiHtml([
         ["Расход", money(t.cost)],
         ["Клики", num(t.clicks)],
         ["Заявки", num(t.conversions)],
         ["Цена заявки", t.cpa ? money(t.cpa) : "—"],
         ["Цена клика", t.cpc ? money(t.cpc) : "—"],
         ["CTR", t.ctr !== null ? pct(t.ctr) : "—"]
-      ];
-      $("kpis").innerHTML = kpis.map(function (k) {
-        return '<div class="kpi"><div class="l">' + k[0] + '</div><div class="v">' + k[1] + '</div></div>';
-      }).join("");
+      ]);
 
-      $("insights").innerHTML = buildInsights(a).map(function (s) {
-        return "<li>" + esc(s) + "</li>";
-      }).join("");
+      $("insights").innerHTML = listHtml(buildInsights(a));
 
       $("camp-body").innerHTML = a.campaigns.map(function (c) {
         var tag = TAGS[c.flag];
@@ -492,6 +1121,89 @@
       $("report").classList.add("show");
     }
 
+    function queryReason(q) {
+      if (q.flag === "junk" || q.flag === "check") { return "стоп-слово: " + q.stopHits.join(", "); }
+      if (q.flag === "offtopic") { return "нет слов продукта"; }
+      return "клики есть, заявок нет";
+    }
+
+    var TABLE_LIMIT = 30;
+
+    function renderQueries() {
+      var a = state.queries;
+      if (!a) { return; }
+      var s = a.summary;
+
+      $("q-kpis").innerHTML = kpiHtml([
+        ["Запросов", num(a.queries.length)],
+        ["Расход по запросам", money(s.cost)],
+        ["Мусор, ₽", money(s.junkCost)],
+        ["Доля мусора", pct(s.junkShare)],
+        ["Без заявок, ₽", money(s.noleadCost)]
+      ]);
+      $("q-insights").innerHTML = listHtml(buildQueryInsights(a));
+
+      $("q-body").innerHTML = a.problems.slice(0, TABLE_LIMIT).map(function (q) {
+        var tag = QTAGS[q.flag];
+        return "<tr>" +
+          "<td>" + esc(q.name) + "</td>" +
+          "<td>" + money(q.cost) + "</td>" +
+          "<td>" + num(q.clicks) + "</td>" +
+          "<td>" + num(q.conversions) + "</td>" +
+          '<td><span class="tag ' + tag[0] + '">' + tag[1] + "</span></td>" +
+          '<td class="why">' + esc(queryReason(q)) + "</td>" +
+          "</tr>";
+      }).join("");
+      $("q-more").textContent = a.problems.length > TABLE_LIMIT
+        ? "Показаны первые " + TABLE_LIMIT + " из " + a.problems.length + " по расходу."
+        : "";
+
+      $("q-minus").value = a.minusStop.map(function (w) { return w.word; }).join("\n");
+      $("q-minus-box").classList.toggle("show", a.minusStop.length > 0);
+      $("q-cand").value = a.minusWords.map(function (w) { return w.word; }).join("\n");
+      $("q-cand-box").classList.toggle("show", a.minusWords.length > 0);
+
+      $("q-report").classList.add("show");
+    }
+
+    function renderPlaces() {
+      var a = state.places;
+      if (!a) { return; }
+      var s = a.summary;
+
+      $("p-kpis").innerHTML = kpiHtml([
+        ["Площадок", num(a.places.length)],
+        ["Расход по площадкам", money(s.cost)],
+        ["Мусор, ₽", money(s.junkCost)],
+        ["Доля мусора", pct(s.junkShare)],
+        ["Проверить, ₽", money(s.checkCost)],
+        ["Без заявок, ₽", money(s.noleadCost)]
+      ]);
+      $("p-insights").innerHTML = listHtml(buildPlaceInsights(a));
+
+      $("p-body").innerHTML = a.problems.slice(0, TABLE_LIMIT).map(function (p) {
+        var tag = PTAGS[p.flag];
+        return "<tr>" +
+          "<td>" + esc(p.name) + (p.reasons.length ? '<div class="hint" style="margin:2px 0 0">' + esc(p.reasons.join(", ")) + "</div>" : "") + "</td>" +
+          "<td>" + money(p.cost) + "</td>" +
+          "<td>" + num(p.clicks) + "</td>" +
+          "<td>" + num(p.conversions) + "</td>" +
+          "<td>" + (p.bounce !== null ? Math.round(p.bounce) + "%" : "—") + "</td>" +
+          "<td>" + (p.duration !== null ? Math.round(p.duration) + " сек" : "—") + "</td>" +
+          "<td>" + (p.depth !== null ? (Math.round(p.depth * 10) / 10).toString().replace(".", ",") : "—") + "</td>" +
+          '<td><span class="tag ' + tag[0] + '">' + tag[1] + "</span></td>" +
+          "</tr>";
+      }).join("");
+      $("p-more").textContent = a.problems.length > TABLE_LIMIT
+        ? "Показаны первые " + TABLE_LIMIT + " из " + a.problems.length + " по расходу."
+        : "";
+
+      $("p-list").value = a.excludeList.join("\n");
+      $("p-list-box").classList.toggle("show", a.excludeList.length > 0);
+
+      $("p-report").classList.add("show");
+    }
+
     function loadText(text, label) {
       $("error").textContent = "";
       var a = analyze(parseCSV(text));
@@ -499,61 +1211,141 @@
         state.analysis = null;
         $("report").classList.remove("show");
         $("error").textContent = a.error;
+        refreshActions();
         return;
       }
       state.analysis = a;
       $("fname").textContent = "Загружено: " + label;
       render();
+      refreshActions();
     }
 
-    function readFile(f) {
+    function runQueries() {
+      if (!state.qRows) { return; }
+      $("q-error").textContent = "";
+      var a = analyzeQueries(state.qRows, { stop: parseList($("stop").value), product: parseList($("product").value) });
+      if (a.error) {
+        state.queries = null;
+        $("q-report").classList.remove("show");
+        $("q-error").textContent = a.error;
+        refreshActions();
+        return;
+      }
+      state.queries = a;
+      $("q-fname").textContent = "Загружено: " + state.qLabel;
+      renderQueries();
+      refreshActions();
+    }
+
+    function loadQueries(text, label) {
+      state.qRows = parseCSV(text);
+      state.qLabel = label;
+      runQueries();
+    }
+
+    function runPlaces() {
+      if (!state.pRows) { return; }
+      $("p-error").textContent = "";
+      var history = Object.create(null);
+      if (state.pHist) { Object.keys(state.pHist.map).forEach(function (k) { history[k] = 1; }); }
+      parseNames($("p-keep").value).forEach(function (n) { history[n] = 1; });
+      var a = analyzePlaces(state.pRows, { history: history });
+      if (a.error) {
+        state.places = null;
+        $("p-report").classList.remove("show");
+        $("p-error").textContent = a.error;
+        refreshActions();
+        return;
+      }
+      state.places = a;
+      $("p-fname").textContent = "Загружено: " + state.pLabel;
+      renderPlaces();
+      refreshActions();
+    }
+
+    function loadPlaces(text, label) {
+      state.pRows = parseCSV(text);
+      state.pLabel = label;
+      runPlaces();
+    }
+
+    function loadPlacesHistory(text, label) {
+      var r = placesWithConversions(parseCSV(text));
+      if (r.error) {
+        state.pHist = null;
+        $("ph-fname").textContent = "";
+        $("p-error").textContent = "Выгрузка за больший период: " + r.error;
+        return;
+      }
+      state.pHist = { map: r.map, count: r.count, label: label };
+      $("ph-fname").textContent = "Загружено: " + label + ". Площадок, которые давали заявки: " + r.count + ".";
+      runPlaces();
+    }
+
+    function readFileText(f, cb) {
       var reader = new FileReader();
       reader.onload = function () {
         var text = reader.result;
-        if (text.indexOf("\uFFFD") !== -1) {
+        if (text.indexOf("�") !== -1) {
           var r2 = new FileReader();
-          r2.onload = function () { loadText(r2.result, f.name); };
+          r2.onload = function () { cb(r2.result); };
           r2.readAsText(f, "windows-1251");
         } else {
-          loadText(text, f.name);
+          cb(text);
         }
       };
       reader.readAsText(f, "utf-8");
     }
 
+    function bindFile(inputId, handler) {
+      $(inputId).addEventListener("change", function (e) {
+        var f = e.target.files[0];
+        if (!f) { return; }
+        readFileText(f, function (text) { handler(text, f.name); });
+        e.target.value = "";
+      });
+    }
+
     function reportText() {
-      var a = state.analysis;
-      var t = a.total;
-      var project = $("project").value.trim();
       var lines = [];
+      var project = $("project").value.trim();
       lines.push("Отчёт по рекламе" + (project ? ": " + project : ""));
-      if (a.period) { lines.push("Период: " + a.period); }
-      lines.push("");
-      lines.push("Расход: " + money(t.cost) + " | Клики: " + num(t.clicks) + " | Заявки: " + num(t.conversions) + " | Цена заявки: " + (t.cpa ? money(t.cpa) : "—"));
-      lines.push("");
-      lines.push("Выводы:");
-      buildInsights(a).forEach(function (s, i) { lines.push((i + 1) + ". " + s); });
+
+      if (state.analysis) {
+        var a = state.analysis;
+        var t = a.total;
+        if (a.period) { lines.push("Период: " + a.period); }
+        lines.push("");
+        lines.push("Расход: " + money(t.cost) + " | Клики: " + num(t.clicks) + " | Заявки: " + num(t.conversions) + " | Цена заявки: " + (t.cpa ? money(t.cpa) : "—"));
+        lines.push("");
+        lines.push("Выводы:");
+        buildInsights(a).forEach(function (s, i) { lines.push((i + 1) + ". " + s); });
+      }
+
+      if (state.queries) {
+        lines.push("");
+        lines.push("Поисковые запросы:");
+        buildQueryInsights(state.queries).forEach(function (s, i) { lines.push((i + 1) + ". " + s); });
+        if (state.queries.minusStop.length) {
+          lines.push("Минус-слова: " + state.queries.minusStop.map(function (w) { return w.word; }).join(", "));
+        }
+      }
+
+      if (state.places) {
+        lines.push("");
+        lines.push("Площадки РСЯ:");
+        buildPlaceInsights(state.places).forEach(function (s, i) { lines.push((i + 1) + ". " + s); });
+        if (state.places.excludeList.length) {
+          lines.push("Площадки для исключения: " + state.places.excludeList.join(", "));
+        }
+      }
       return lines.join("\n");
     }
 
-    $("file").addEventListener("change", function (e) {
-      var f = e.target.files[0];
-      if (!f) { return; }
-      readFile(f);
-      e.target.value = "";
-    });
-
-    $("demo").addEventListener("click", function () { loadText(SAMPLE, "пример (тестовые данные)"); });
-    $("project").addEventListener("input", render);
-    $("print").addEventListener("click", function () { window.print(); });
-
-    $("copy").addEventListener("click", function () {
-      if (!state.analysis) { return; }
-      var text = reportText();
-      var btn = $("copy");
+    function copyText(text, btn, label) {
       function done() {
         btn.textContent = "Скопировано";
-        setTimeout(function () { btn.textContent = "Скопировать текст"; }, 2000);
+        setTimeout(function () { btn.textContent = label; }, 2000);
       }
       function fallback() {
         var ta = document.createElement("textarea");
@@ -568,7 +1360,34 @@
       } else {
         fallback();
       }
+    }
+
+    bindFile("file", loadText);
+    bindFile("q-file", loadQueries);
+    bindFile("p-file", loadPlaces);
+    bindFile("ph-file", loadPlacesHistory);
+
+    $("demo").addEventListener("click", function () { loadText(SAMPLE, "пример (тестовые данные)"); });
+    $("q-demo").addEventListener("click", function () {
+      if (!$("product").value.trim()) { $("product").value = DEMO_PRODUCT; }
+      loadQueries(SAMPLE_Q, "пример (тестовые данные)");
     });
+    $("p-demo").addEventListener("click", function () { loadPlaces(SAMPLE_P, "пример (тестовые данные)"); });
+    $("ph-demo").addEventListener("click", function () { loadPlacesHistory(SAMPLE_P_HIST, "пример: данные за 90 дней"); });
+    $("p-keep").addEventListener("input", runPlaces);
+
+    $("project").addEventListener("input", render);
+    $("stop").addEventListener("input", runQueries);
+    $("product").addEventListener("input", runQueries);
+    $("print").addEventListener("click", function () { window.print(); });
+
+    $("copy").addEventListener("click", function () {
+      if (!(state.analysis || state.queries || state.places)) { return; }
+      copyText(reportText(), $("copy"), "Скопировать текст");
+    });
+    $("q-minus-copy").addEventListener("click", function () { copyText($("q-minus").value, $("q-minus-copy"), "Скопировать минус-слова"); });
+    $("q-cand-copy").addEventListener("click", function () { copyText($("q-cand").value, $("q-cand-copy"), "Скопировать кандидатов"); });
+    $("p-list-copy").addEventListener("click", function () { copyText($("p-list").value, $("p-list-copy"), "Скопировать список"); });
   </script>
 </body>
 </html>
